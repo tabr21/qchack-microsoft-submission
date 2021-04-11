@@ -1,6 +1,9 @@
 namespace QCHack.Task4 {
     open Microsoft.Quantum.Canon;
     open Microsoft.Quantum.Intrinsic;
+    open Microsoft.Quantum.Diagnostics;
+    open Microsoft.Quantum.Convert;
+    open Microsoft.Quantum.Math;
 
     // Task 4 (12 points). f(x) = 1 if the graph edge coloring is triangle-free
     // 
@@ -43,7 +46,58 @@ namespace QCHack.Task4 {
         colorsRegister : Qubit[], 
         target : Qubit
     ) : Unit is Adj+Ctl {
-        // ...
+        let m = Length(edges);
+        let len = Min([4, Max([m - 3, 1])]);
+        use res = Qubit[2];
+        for u in 0..1 {
+            for w in 0..1 {
+                use anc = Qubit[len];
+                for v in 0..1 {
+                    for i in 0..m - 1 {
+                        for j in i + 1..m - 1 {
+                            for k in j + 1..m - 1 {
+                                let (ix, iy) = edges[i];
+                                let (jx, jy) = edges[j];
+                                let (kx, ky) = edges[k];
+                                let x = ix;
+                                let y = iy;
+                                let z = (jx + jy + kx + ky - ix - iy) / 2;
+                                if (((x == jx) and (z == jy)) or ((z == jx) and (x == jy))) and (((y == kx) and (z == ky)) or ((z == kx) and (y == ky)))  
+                                or (((y == jx) and (z == jy)) or ((z == jx) and (y == jy))) and (((x == kx) and (z == ky)) or ((z == kx) and (x == ky))) {
+                                    if len >= 4 {
+                                        Controlled X([colorsRegister[i], colorsRegister[j], colorsRegister[k], anc[0], anc[1], anc[2]], anc[3]);
+                                    }
+                                    if len >= 3 {
+                                        Controlled X([colorsRegister[i], colorsRegister[j], colorsRegister[k], anc[0], anc[1]], anc[2]);
+                                    }
+                                    if len >= 2 {
+                                        Controlled X([colorsRegister[i], colorsRegister[j], colorsRegister[k], anc[0]], anc[1]);
+                                    }
+                                    Controlled X([colorsRegister[i], colorsRegister[j], colorsRegister[k]], anc[0]);
+                                }
+                            }
+                        }
+                    }
+                    if v == 0 {
+                        for i in 1..2 ^ len - 1 {
+                            ControlledOnInt(i, X)(anc, res[w]);
+                        }
+                    }
+                    for i in 0..len - 1 {
+                        X(anc[i]);
+                    }
+                }
+                for i in 0..m - 1 {
+                    X(colorsRegister[i]);
+                }
+            }
+            if u == 0 {
+                for i in 1..3 {
+                    ControlledOnInt(i, X)(res, target);
+                }
+            }
+        }
+        X(target);
     }
 }
 
