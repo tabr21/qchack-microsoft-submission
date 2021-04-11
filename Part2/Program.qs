@@ -8,6 +8,7 @@ namespace Part2 {
     open Microsoft.Quantum.Arrays;
     open Microsoft.Quantum.Preparation;
     open Microsoft.Quantum.Random;
+    open Microsoft.Quantum.Diagnostics;
 
     // get phase-oracle from given oracle
     operation OracleConverter(oracle : (Qubit[], Qubit) => Unit is Adj + Ctl, register : Qubit[]) : Unit is Adj + Ctl {
@@ -35,32 +36,38 @@ namespace Part2 {
         }
     }
 
+    // calculate the sum of array
+    function Sum(array : Int[]) : Int {
+        let n = Length(array);
+        mutable result = 0;
+        for i in 0..n - 1 {
+            set result = result + array[i];
+        }
+        return result;
+    }
+
     // SubTask. f(x) = 1 if the subset sum of "array" equals to "sum"
     operation SSPOracle(register : Qubit[], target : Qubit, array : Int[], sum : Int) : Unit is Adj + Ctl {
         let n = Length(array);
-        let len = 15; // !! 後で変更
-        use x = Qubit[len];
-        use y = Qubit[len];
+        let len = BitSizeI(Sum(array));
+        use anc = Qubit[len];
+        let ancLE = LittleEndian(anc);
         within {
             for i in 0..n - 1 {
-                Controlled IncrementByInteger([register[i]], (array[i], LittleEndian(x)));
-            }
-            IncrementByInteger(sum, LittleEndian(y));
-            ApplyToEachCA(X, y);
-            for i in 0..n - 1 {
-                CNOT(x[i], y[i]);
+                Controlled IncrementByInteger([register[i]], (array[i], ancLE));
             }
         } apply {
-            Controlled X(y, target);
+            ControlledOnInt(sum, X)(anc, target);
         }
     }
 
     // auto generate variables, verify algorithm, and show results
     @EntryPoint()
     operation Main() : Unit {
-        let n = 5;      // length of array
-        let MAX = 1000;  // maximum possible value in array
-        let p = 0.3;     // the probability of selected as a part of sum
+        let n = 8;       // length of array
+        let MAX = 100;   // maximum possible value in array
+        let p = 0.5;     // the probability of selected as a part of sum
+        let trials = 3;  // the number of trying searches
         mutable array = new Int[n];
         for i in 0..n - 1 {
             set array w/= i <- DrawRandomInt(0, MAX);
@@ -73,10 +80,9 @@ namespace Part2 {
         }
         Message($"array: {array}");
         Message($"sum: {sum}");
+        mutable flag = 0;
         mutable found = false;
-        mutable count = 0;
         repeat {
-            set count = count + 1;
             use register = Qubit[n];
             let iterations = Round(PI() / 4.0 * Sqrt(IntAsDouble(1 <<< n)));
             GroversSearch(register, SSPOracle(_, _, array, sum), iterations);
@@ -90,11 +96,12 @@ namespace Part2 {
             }
             if answer == sum {
                 set found = true;
-                Message($"Answer found: {result}");
-            } else {
-                Message($"{answer} != {sum}");
+                Message($"Answer Found: {result}");
             }
-        } until (found or count > 1000);
-        Message($"{count}");
+            set flag = flag + 1;
+        } until (flag <= trials or found);
+        if not found {
+            Message("Answer Not Found");
+        }
     }
 }
