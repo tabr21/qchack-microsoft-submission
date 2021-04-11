@@ -49,7 +49,7 @@ namespace Part2 {
     // SubTask. f(x) = 1 if the subset sum of "array" equals to "sum"
     operation SSPOracle(register : Qubit[], target : Qubit, array : Int[], sum : Int) : Unit is Adj + Ctl {
         let n = Length(array);
-        let len = BitSizeI(Sum(array));
+        let len = BitSizeI(Sum(array)); // set len as Sum(array) < 2 ** len, to avoid overflow
         use anc = Qubit[len];
         let ancLE = LittleEndian(anc);
         within {
@@ -64,22 +64,22 @@ namespace Part2 {
     // auto generate variables, verify algorithm, and show results
     @EntryPoint()
     operation Main() : Unit {
-        let n = 8;       // length of array
-        let MAX = 100;   // maximum possible value in array
-        let p = 0.5;     // the probability of selecting as a part of sum
-        let q = 0.3;     // the probability of incrementation of sum
-        let trials = 5;  // the number of trying searches
+        let n = 8;                  // length of array
+        let maxArray = 100;         // maximum possible value in array
+        let pSelection = 0.5;       // the probability of selecting as a part of sum
+        let pIncrementation = 0.3;  // the probability of incrementation of sum
+        let trials = 5;             // the number of trying searches
         mutable array = new Int[n];
         for i in 0..n - 1 {
-            set array w/= i <- DrawRandomInt(0, MAX);
+            set array w/= i <- DrawRandomInt(0, maxArray);
         }
         mutable sum = 0;
         for i in 0..n - 1 {
-            if DrawRandomBool(p) {
+            if DrawRandomBool(pSelection) {
                 set sum = sum + array[i];
             }
         }
-        if DrawRandomBool(q) {
+        if DrawRandomBool(pIncrementation) {
             set sum = sum + 1;  // the answer may not exist! 
         }
         Message($"array: {array}");
@@ -88,7 +88,7 @@ namespace Part2 {
         mutable found = false;
         repeat {
             use register = Qubit[n];
-            let iterations = Round(PI() / 4.0 * Sqrt(IntAsDouble(1 <<< n)));
+            let iterations = Round(PI() / 4.0 * Sqrt(IntAsDouble(1 <<< n)));  // O(sqrt(2 ** n)) loops
             GroversSearch(register, SSPOracle(_, _, array, sum), iterations);
             let result = ResultArrayAsBoolArray(MultiM(register));
             ResetAll(register);
