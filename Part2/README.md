@@ -6,4 +6,6 @@ SSP is a NP complete problem, so if you want to solve this naively, it will take
 This time, the problem is restricted as each value in array is non negative in order to make it solvable in Q#. 
 Using Grover's algorithm, this can be solved in O(n * sqrt(2 ** n)) time.
 
-You can run `Program.qs` with command `dotnet run`. You can change some variables at Main(). But be careful, don't make these values too large or the program takes very long time or causes error.
+You can run `Program.qs` with command `dotnet run`. 
+You can change some variables at Main(). 
+But be careful, don't make these values too large or the program takes very long time or causes error.
