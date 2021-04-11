@@ -66,8 +66,9 @@ namespace Part2 {
     operation Main() : Unit {
         let n = 8;       // length of array
         let MAX = 100;   // maximum possible value in array
-        let p = 0.5;     // the probability of selected as a part of sum
-        let trials = 3;  // the number of trying searches
+        let p = 0.5;     // the probability of selecting as a part of sum
+        let q = 0.3;     // the probability of incrementation of sum
+        let trials = 5;  // the number of trying searches
         mutable array = new Int[n];
         for i in 0..n - 1 {
             set array w/= i <- DrawRandomInt(0, MAX);
@@ -77,6 +78,9 @@ namespace Part2 {
             if DrawRandomBool(p) {
                 set sum = sum + array[i];
             }
+        }
+        if DrawRandomBool(q) {
+            set sum = sum + 1;  // the answer may not exist! 
         }
         Message($"array: {array}");
         Message($"sum: {sum}");
