@@ -52,6 +52,7 @@ namespace Part2 {
         let len = BitSizeI(Sum(array)); // set len as Sum(array) < 2 ** len, to avoid overflow
         use anc = Qubit[len];
         let ancLE = LittleEndian(anc);
+        // for each i, add array[i] to anc, and flip target if sum == anc
         within {
             for i in 0..n - 1 {
                 Controlled IncrementByInteger([register[i]], (array[i], ancLE));
@@ -65,8 +66,8 @@ namespace Part2 {
     @EntryPoint()
     operation Main() : Unit {
         let nTestcases = 5;         // the number of test cases
-        let n = 7;                  // length of array
-        let maxArray = 500;         // maximum possible value in array
+        let n = 6;                  // length of array
+        let maxArray = 300;         // maximum possible value in array
         let pSelection = 0.5;       // the probability of selecting as a part of sum
         let pIncrementation = 0.3;  // the probability of incrementation of sum
         let trials = 5;             // the number of trying searches
@@ -84,7 +85,7 @@ namespace Part2 {
                 }
             }
             if DrawRandomBool(pIncrementation) {
-                set sum = sum + 1;  // the answer may not exist! 
+                set sum = sum + 1;  // the answer may not exist!
             }
             Message($"array: {array}");
             Message($"sum: {sum}");
@@ -110,7 +111,7 @@ namespace Part2 {
                 set flag = flag + 1;
             } until (flag >= trials or found);
             // when answer is not found, excute brute force to check if "quantum" algorithm is OK or not
-            // this part was used as unit test originally
+            // the part below was used as unit test originally
             if not found {
                 Message("Answer Not Found");
                 // evaluate using O(n * 2 ** n) "classical" brute force algorithm
@@ -131,8 +132,9 @@ namespace Part2 {
                         }
                     }
                 }
+                // this sometimes happens when maxArray and trials are small
                 if Length(result) != 0 {
-                    Message($"Answer Found using BruteForce: {result}");  // this sometimes happens when maxArray and trials are small
+                    Message($"Answer Found using BruteForce: {result}");
                 }
             }
         }
